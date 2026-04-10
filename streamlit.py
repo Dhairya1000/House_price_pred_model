@@ -8,23 +8,31 @@ import gdown
 MODEL_FILE = "model.pkl"
 PIPELINE_FILE = "pipeline.pkl"
 
-# Google Drive links
-MODEL_URL = "https://drive.google.com/uc?id=1Y_kIvJ2c9x-brYiekb8VW3sw3r42tFG6"
-PIPELINE_URL = "https://drive.google.com/uc?id=1nNRKxYFYkli7ePt6WgG8sqYlVLqtp-Rq"
+# Your Google Drive FILE IDs
+MODEL_ID = "1Y_kIvJ2c9x-brYiekb8VW3sw3r42tFG6"
+PIPELINE_ID = "1nNRKxYFYkli7ePt6WgG8sqYlVLqtp-Rq"
 
-# Load model
+# Convert to direct download links
+MODEL_URL = f"https://drive.google.com/uc?id={MODEL_ID}"
+PIPELINE_URL = f"https://drive.google.com/uc?id={PIPELINE_ID}"
+
+
 @st.cache_resource
 def load_model():
-    if not os.path.exists(MODEL_FILE):
-        with st.spinner("Downloading model..."):
-            gdown.download(MODEL_URL, MODEL_FILE, quiet=False)
 
+    # Download model if not exists
+    if not os.path.exists(MODEL_FILE):
+        st.info("⬇️ Downloading model...")
+        gdown.download(MODEL_URL, MODEL_FILE, quiet=False)
+
+    # Download pipeline if not exists
     if not os.path.exists(PIPELINE_FILE):
-        with st.spinner("Downloading pipeline..."):
-            gdown.download(PIPELINE_URL, PIPELINE_FILE, quiet=False)
+        st.info("⬇️ Downloading pipeline...")
+        gdown.download(PIPELINE_URL, PIPELINE_FILE, quiet=False)
 
     model = joblib.load(MODEL_FILE)
     pipeline = joblib.load(PIPELINE_FILE)
+
     return model, pipeline
 
 
@@ -43,6 +51,7 @@ if mode == "Upload CSV":
     if uploaded_file is not None:
         try:
             input_data = pd.read_csv(uploaded_file)
+
             st.subheader("📄 Uploaded Data")
             st.write(input_data.head())
 
@@ -56,10 +65,10 @@ if mode == "Upload CSV":
 
             csv = input_data.to_csv(index=False).encode('utf-8')
             st.download_button(
-                label="⬇️ Download Predictions",
-                data=csv,
-                file_name="output.csv",
-                mime="text/csv"
+                "⬇️ Download Predictions",
+                csv,
+                "output.csv",
+                "text/csv"
             )
 
         except Exception as e:
@@ -69,7 +78,6 @@ if mode == "Upload CSV":
 else:
     st.subheader("✍️ Enter House Details")
 
-    # Inputs (based on housing dataset)
     longitude = st.number_input("Longitude", value=-122.23)
     latitude = st.number_input("Latitude", value=37.88)
     housing_median_age = st.number_input("Housing Median Age", value=41)
@@ -86,19 +94,17 @@ else:
 
     if st.button("Predict Price"):
         try:
-            input_dict = {
-                "longitude": [longitude],
-                "latitude": [latitude],
-                "housing_median_age": [housing_median_age],
-                "total_rooms": [total_rooms],
-                "total_bedrooms": [total_bedrooms],
-                "population": [population],
-                "households": [households],
-                "median_income": [median_income],
-                "ocean_proximity": [ocean_proximity]
-            }
-
-            input_df = pd.DataFrame(input_dict)
+            input_df = pd.DataFrame([{
+                "longitude": longitude,
+                "latitude": latitude,
+                "housing_median_age": housing_median_age,
+                "total_rooms": total_rooms,
+                "total_bedrooms": total_bedrooms,
+                "population": population,
+                "households": households,
+                "median_income": median_income,
+                "ocean_proximity": ocean_proximity
+            }])
 
             transformed_data = pipeline.transform(input_df)
             prediction = model.predict(transformed_data)
