@@ -6,7 +6,7 @@ A Machine Learning web application that predicts California house prices based o
 
 ## 🚀 Live Demo
 
-🔗 https://house-price-prediction-model-1-7fys.onrender.com
+https://house-price-pred-model-1.onrender.com/
 
 ---
 
