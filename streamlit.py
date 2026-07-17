@@ -12,15 +12,14 @@ MODEL_FILE = "models/model.pkl"
 PIPELINE_FILE = "models/pipeline.pkl"
 
 # Your Google Drive FILE IDs
-MODEL_URL = "https://drive.google.com/uc?id=14rg5vCJGZi-E8Tf_Jur429Z9IGrGh2X2"
-
-PIPELINE_URL = "https://drive.google.com/uc?id=1zTSc6lUwU2dmuOlZZbrbftxSL12ZpqQy"
+MODEL_URL = "https://drive.google.com/uc?id=1pAS6nO1rnkBzVZqttngglF1Ee14LTCJo"
+PIPELINE_URL = "https://drive.google.com/uc?id=1y7RB3_FNcnM9k6aBI4ikrnNoyKWhv1nt"
 
 @st.cache_resource
 def load_model():
 
     os.makedirs("models", exist_ok=True)
-    
+
     # Download model if not exists
     if not os.path.exists(MODEL_FILE):
         st.info("⬇️ Downloading model...")

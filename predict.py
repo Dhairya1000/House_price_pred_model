@@ -9,9 +9,8 @@ MODEL_FILE = "models/model.pkl"
 PIPELINE_FILE = "models/pipeline.pkl"
 
 # Convert your Google Drive links to direct download links
-MODEL_URL = "https://drive.google.com/uc?id=14rg5vCJGZi-E8Tf_Jur429Z9IGrGh2X2"
-
-PIPELINE_URL = "https://drive.google.com/uc?id=1zTSc6lUwU2dmuOlZZbrbftxSL12ZpqQy"
+MODEL_URL = "https://drive.google.com/uc?id=1pAS6nO1rnkBzVZqttngglF1Ee14LTCJo"
+PIPELINE_URL = "https://drive.google.com/uc?id=1y7RB3_FNcnM9k6aBI4ikrnNoyKWhv1nt"
 
 
 # Download model if not present

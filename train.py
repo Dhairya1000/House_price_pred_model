@@ -137,51 +137,26 @@ print(f"Cross Validation Std Dev   : {tree_cv_rmse.std():.2f}")
 print(f"Test RMSE                  : {tree_test_rmse:.2f}")
 
 # Random Forest
-forest_reg = RandomForestRegressor(random_state=42)
-
-param_distributions = {
-    "n_estimators": [100, 200, 300],
-    "max_depth": [10, 20, 30, None],
-    "min_samples_split": [2, 5, 10],
-    "min_samples_leaf": [1, 2, 4],
-    "max_features": ["sqrt", "log2"]
-}
-
-random_search = RandomizedSearchCV(
-    estimator=forest_reg,
-    param_distributions=param_distributions,
-    n_iter=20,
-    cv=5,
-    scoring="neg_root_mean_squared_error",
+forest_reg = RandomForestRegressor(
+    n_estimators=100,
     random_state=42,
     n_jobs=-1
 )
-# Train RandomizedSearchCV
-random_search.fit(housing_prepared, housing_labels)
 
-# Best model after hyperparameter tuning
-best_model = random_search.best_estimator_
+forest_reg.fit(housing_prepared, housing_labels)
 
-# Display best hyperparameters
-print("========== Best Hyperparameters ==========")
-print(random_search.best_params_)
-print(f"Best CV RMSE: {-random_search.best_score_:.2f}")
-print("==========================================")
+# Predictions
+test_predictions = forest_reg.predict(X_test_prepared)
 
-
-# Make predictions on the test set
-test_predictions = best_model.predict(X_test_prepared)
-
-# Evaluation Metrics
+# Metrics
 test_rmse = root_mean_squared_error(y_test, test_predictions)
 test_mae = mean_absolute_error(y_test, test_predictions)
 test_r2 = r2_score(y_test, test_predictions)
 
-print("\n========== Model Performance ==========")
+print("\n========== Random Forest ==========")
 print(f"RMSE : {test_rmse:.2f}")
 print(f"MAE  : {test_mae:.2f}")
 print(f"R²   : {test_r2:.4f}")
-print("=======================================")
 
 print("\n========== Model Comparison ==========")
 print(f"Linear Regression Test RMSE : {lin_test_rmse:.2f}")
@@ -192,7 +167,7 @@ print("======================================")
 # Save the trained model and preprocessing pipeline
 os.makedirs("models", exist_ok=True)
 
-joblib.dump(best_model, "models/model.pkl")
+joblib.dump(forest_reg, "models/model.pkl")
 joblib.dump(full_pipeline, "models/pipeline.pkl")
 
 print("\n✅ Model saved as model.pkl")
