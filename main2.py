@@ -3,12 +3,16 @@ import joblib
 import pandas as pd
 import gdown
 
-MODEL_FILE = "model.pkl"
-PIPELINE_FILE = "pipeline.pkl"
+os.makedirs("models", exist_ok=True)
+
+MODEL_FILE = "models/model.pkl"
+PIPELINE_FILE = "models/pipeline.pkl"
 
 # Convert your Google Drive links to direct download links
-MODEL_URL = "https://drive.google.com/uc?id=1Y_kIvJ2c9x-brYiekb8VW3sw3r42tFG6"
-PIPELINE_URL = "https://drive.google.com/uc?id=1nNRKxYFYkli7ePt6WgG8sqYlVLqtp-Rq"
+MODEL_URL = "https://drive.google.com/uc?id=14rg5vCJGZi-E8Tf_Jur429Z9IGrGh2X2"
+
+PIPELINE_URL = "https://drive.google.com/uc?id=1zTSc6lUwU2dmuOlZZbrbftxSL12ZpqQy"
+
 
 # Download model if not present
 if not os.path.exists(MODEL_FILE):
@@ -24,17 +28,69 @@ if not os.path.exists(PIPELINE_FILE):
 model = joblib.load(MODEL_FILE)
 pipeline = joblib.load(PIPELINE_FILE)
 
+os.makedirs("data", exist_ok=True)
+
 # Load input data
-input_data = pd.read_csv("input.csv")
+INPUT_FILE = "data/input.csv"
+OUTPUT_FILE = "data/output.csv"
+
+if not os.path.exists(INPUT_FILE):
+    raise FileNotFoundError(f"{INPUT_FILE} not found.")
+input_data = pd.read_csv(INPUT_FILE)
+
+required_columns = [
+    "longitude",
+    "latitude",
+    "housing_median_age",
+    "total_rooms",
+    "total_bedrooms",
+    "population",
+    "households",
+    "median_income",
+    "ocean_proximity"
+]
+
+missing = [col for col in required_columns if col not in input_data.columns]
+
+if missing:
+    raise ValueError(f"Missing columns: {missing}")
+
+input_data["rooms_per_household"] = (
+    input_data["total_rooms"] /
+    input_data["households"]
+)
+
+input_data["bedrooms_per_room"] = (
+    input_data["total_bedrooms"] /
+    input_data["total_rooms"]
+)
+
+input_data["population_per_household"] = (
+    input_data["population"] /
+    input_data["households"]
+)
 
 # Transform + Predict
-transformed_data = pipeline.transform(input_data)
-predictions = model.predict(transformed_data)
+try:
+    transformed_data = pipeline.transform(input_data)
+    predictions = model.predict(transformed_data)
 
-# Save output
-input_data['median_house_value'] = predictions
-input_data.to_csv("output.csv", index=False)
+    input_data["median_house_value"] = predictions.round(2)
 
-print("✅ Inference complete! Check output.csv")
+    # Move prediction column to the end
+    
+    cols = [col for col in input_data.columns if col != "median_house_value"]
+    input_data = input_data[cols + ["median_house_value"]]
+    input_data.to_csv(OUTPUT_FILE, index=False)
+
+    print("=" * 40)
+    print("Batch Prediction Completed")
+    print(f"Rows Processed : {len(input_data)}")
+    print(f"Saved File     : {OUTPUT_FILE}")
+    print("=" * 40)
+
+except Exception as e:
+    print(f"Prediction failed: {e}")
+
 
 

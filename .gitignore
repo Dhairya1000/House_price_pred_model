@@ -1,2 +1,4 @@
 # ignore pickle files
 *.pkl
+__pycache__
+Dockerfile

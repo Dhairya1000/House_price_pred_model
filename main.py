@@ -8,8 +8,15 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import root_mean_squared_error
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, RandomizedSearchCV
+from sklearn.metrics import (
+    root_mean_squared_error,
+    mean_absolute_error,
+    r2_score
+)
+import joblib
+import json
+import os
 
 housing = pd.read_csv('housing.csv')
 housing["income_cat"] = pd.cut(
@@ -22,7 +29,39 @@ for train_index, test_index in split.split(housing, housing["income_cat"]):
     strat_train_set = housing.loc[train_index].drop("income_cat", axis=1)
     strat_test_set = housing.loc[test_index].drop("income_cat", axis=1)
 
+# ==========================
+# Feature Engineering (Train)
+# ==========================
+strat_train_set["rooms_per_household"] = (
+    strat_train_set["total_rooms"] / strat_train_set["households"]
+)
+
+strat_train_set["bedrooms_per_room"] = (
+    strat_train_set["total_bedrooms"] / strat_train_set["total_rooms"]
+)
+
+strat_train_set["population_per_household"] = (
+    strat_train_set["population"] / strat_train_set["households"]
+)
+
+# ==========================
+# Feature Engineering (Test)
+# ==========================
+strat_test_set["rooms_per_household"] = (
+    strat_test_set["total_rooms"] / strat_test_set["households"]
+)
+
+strat_test_set["bedrooms_per_room"] = (
+    strat_test_set["total_bedrooms"] / strat_test_set["total_rooms"]
+)
+
+strat_test_set["population_per_household"] = (
+    strat_test_set["population"] / strat_test_set["households"]
+)
+
 housing = strat_train_set.copy()
+
+
 housing_labels = housing['median_house_value'].copy()
 housing_features = housing.drop('median_house_value',axis=1)
 
@@ -50,6 +89,9 @@ full_pipeline = ColumnTransformer([
  
 # 6. Transform the data
 housing_prepared = full_pipeline.fit_transform(housing_features)
+X_test = strat_test_set.drop("median_house_value", axis=1)
+y_test = strat_test_set["median_house_value"]
+X_test_prepared = full_pipeline.transform(X_test)
  
 # housing_prepared is now a NumPy array ready for training
 print(housing_prepared.shape)
@@ -57,17 +99,24 @@ print(housing_prepared.shape)
 # Linear Regression
 lin_reg = LinearRegression()
 lin_reg.fit(housing_prepared, housing_labels)
-lin_reg_pred = lin_reg.predict(housing_prepared)
-lin_reg_rmse = root_mean_squared_error(lin_reg_pred,housing_labels)
-print(lin_reg_rmse)
+
+# Training RMSE
+lin_train_pred = lin_reg.predict(housing_prepared)
+lin_train_rmse = root_mean_squared_error(housing_labels, lin_train_pred)
+
+# Test RMSE
+lin_test_pred = lin_reg.predict(X_test_prepared)
+lin_test_rmse = root_mean_squared_error(y_test, lin_test_pred)
+
+print("\n========== Linear Regression ==========")
+print(f"Training RMSE : {lin_train_rmse:.2f}")
+print(f"Test RMSE     : {lin_test_rmse:.2f}")
 
 # Decision Tree
 tree_reg = DecisionTreeRegressor(random_state=42)
 tree_reg.fit(housing_prepared, housing_labels)
-tree_reg_pred = tree_reg.predict(housing_prepared)
-# tree_reg_rmse = root_mean_squared_error(tree_reg_pred,housing_labels)
-# print(tree_reg_rmse)
 
+# Cross Validation
 tree_rmses = -cross_val_score(
     tree_reg,
     housing_prepared,
@@ -75,10 +124,89 @@ tree_rmses = -cross_val_score(
     scoring="neg_root_mean_squared_error",
     cv=10
 )
-print(pd.Series(tree_rmses).describe())
 
+tree_cv_rmse = pd.Series(tree_rmses)
+
+# Test Prediction
+tree_test_pred = tree_reg.predict(X_test_prepared)
+tree_test_rmse = root_mean_squared_error(y_test, tree_test_pred)
+
+print("\n========== Decision Tree ==========")
+print(f"Cross Validation Mean RMSE : {tree_cv_rmse.mean():.2f}")
+print(f"Cross Validation Std Dev   : {tree_cv_rmse.std():.2f}")
+print(f"Test RMSE                  : {tree_test_rmse:.2f}")
+
+# Random Forest
 forest_reg = RandomForestRegressor(random_state=42)
-forest_reg.fit(housing_prepared, housing_labels)
-forest_reg_pred = forest_reg.predict(housing_prepared)
-forest_reg_rmse = root_mean_squared_error(forest_reg_pred,housing_labels)
-print(forest_reg_rmse)
+
+param_distributions = {
+    "n_estimators": [100, 200, 300],
+    "max_depth": [10, 20, 30, None],
+    "min_samples_split": [2, 5, 10],
+    "min_samples_leaf": [1, 2, 4],
+    "max_features": ["sqrt", "log2"]
+}
+
+random_search = RandomizedSearchCV(
+    estimator=forest_reg,
+    param_distributions=param_distributions,
+    n_iter=20,
+    cv=5,
+    scoring="neg_root_mean_squared_error",
+    random_state=42,
+    n_jobs=-1
+)
+# Train RandomizedSearchCV
+random_search.fit(housing_prepared, housing_labels)
+
+# Best model after hyperparameter tuning
+best_model = random_search.best_estimator_
+
+# Display best hyperparameters
+print("========== Best Hyperparameters ==========")
+print(random_search.best_params_)
+print(f"Best CV RMSE: {-random_search.best_score_:.2f}")
+print("==========================================")
+
+
+# Make predictions on the test set
+test_predictions = best_model.predict(X_test_prepared)
+
+# Evaluation Metrics
+test_rmse = root_mean_squared_error(y_test, test_predictions)
+test_mae = mean_absolute_error(y_test, test_predictions)
+test_r2 = r2_score(y_test, test_predictions)
+
+print("\n========== Model Performance ==========")
+print(f"RMSE : {test_rmse:.2f}")
+print(f"MAE  : {test_mae:.2f}")
+print(f"R²   : {test_r2:.4f}")
+print("=======================================")
+
+print("\n========== Model Comparison ==========")
+print(f"Linear Regression Test RMSE : {lin_test_rmse:.2f}")
+print(f"Decision Tree Test RMSE     : {tree_test_rmse:.2f}")
+print(f"Random Forest Test RMSE     : {test_rmse:.2f}")
+print("======================================")
+
+# Save the trained model and preprocessing pipeline
+os.makedirs("models", exist_ok=True)
+
+joblib.dump(best_model, "models/model.pkl")
+joblib.dump(full_pipeline, "models/pipeline.pkl")
+
+print("\n✅ Model saved as model.pkl")
+print("✅ Pipeline saved as pipeline.pkl")
+
+metrics = {
+    "RMSE": round(test_rmse, 2),
+    "MAE": round(test_mae, 2),
+    "R2": round(test_r2, 4)
+}
+
+os.makedirs("artifacts", exist_ok=True)
+
+with open("artifacts/metrics.json", "w") as f:
+    json.dump(metrics, f, indent=4)
+
+print("✅ Metrics saved.")

@@ -3,19 +3,18 @@ import joblib
 import pandas as pd
 import streamlit as st
 import gdown
+import json
+
+os.makedirs("models", exist_ok=True)
 
 # File names
-MODEL_FILE = "model.pkl"
-PIPELINE_FILE = "pipeline.pkl"
+MODEL_FILE = "models/model.pkl"
+PIPELINE_FILE = "models/pipeline.pkl"
 
 # Your Google Drive FILE IDs
-MODEL_ID = "1Y_kIvJ2c9x-brYiekb8VW3sw3r42tFG6"
-PIPELINE_ID = "1nNRKxYFYkli7ePt6WgG8sqYlVLqtp-Rq"
+MODEL_URL = "https://drive.google.com/uc?id=14rg5vCJGZi-E8Tf_Jur429Z9IGrGh2X2"
 
-# Convert to direct download links
-MODEL_URL = f"https://drive.google.com/uc?id={MODEL_ID}"
-PIPELINE_URL = f"https://drive.google.com/uc?id={PIPELINE_ID}"
-
+PIPELINE_URL = "https://drive.google.com/uc?id=1zTSc6lUwU2dmuOlZZbrbftxSL12ZpqQy"
 
 @st.cache_resource
 def load_model():
@@ -39,13 +38,48 @@ def load_model():
 st.set_page_config(page_title="House Price Predictor", layout="centered")
 st.title("🏠 House Price Prediction App")
 
+st.sidebar.title("About")
+
+st.sidebar.write("""
+Random Forest Regressor
+
+Dataset:
+California Housing
+
+Framework:
+Scikit-learn
+
+Author:
+Dhairya Nagpal
+""")
+
 model, pipeline = load_model()
 
+metrics = None
+
+if os.path.exists("artifacts/metrics.json"):
+    with open("artifacts/metrics.json", "r") as f:
+        metrics = json.load(f)
+
+if metrics:
+
+    st.subheader("📈 Model Performance")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("RMSE", f"{metrics['RMSE']:,}")
+    col2.metric("MAE", f"{metrics['MAE']:,}")
+    col3.metric("R²", f"{metrics['R2']:.4f}")
+
+
 # Mode selection
-mode = st.radio("Choose Input Method:", ["Upload CSV", "Manual Input"])
+tab1, tab2 = st.tabs([
+    "📝 Manual Prediction",
+    "📂 Batch Prediction"
+])
 
 # ================= CSV MODE =================
-if mode == "Upload CSV":
+with tab2:
     uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
     if uploaded_file is not None:
@@ -53,17 +87,33 @@ if mode == "Upload CSV":
             input_data = pd.read_csv(uploaded_file)
 
             st.subheader("📄 Uploaded Data")
-            st.write(input_data.head())
+            st.dataframe(input_data)
+
+            output_data = input_data.copy()
+
+            # Feature engineering...
+            input_data["rooms_per_household"] = (
+                input_data["total_rooms"] / input_data["households"]
+            )
+
+            input_data["bedrooms_per_room"] = (
+                input_data["total_bedrooms"] / input_data["total_rooms"]
+            )
+
+            input_data["population_per_household"] = (
+                input_data["population"] / input_data["households"]
+            )
 
             transformed_data = pipeline.transform(input_data)
             predictions = model.predict(transformed_data)
 
-            input_data['median_house_value'] = predictions
+            output_data["median_house_value"] = predictions.round(2)
 
             st.subheader("📊 Predictions")
-            st.write(input_data.head())
+            st.dataframe(output_data)
 
-            csv = input_data.to_csv(index=False).encode('utf-8')
+            csv = output_data.to_csv(index=False).encode("utf-8")
+
             st.download_button(
                 "⬇️ Download Predictions",
                 csv,
@@ -75,7 +125,7 @@ if mode == "Upload CSV":
             st.error(f"Error: {e}")
 
 # ================= MANUAL MODE =================
-else:
+with tab1:
     st.subheader("✍️ Enter House Details")
 
     longitude = st.number_input("Longitude", value=-122.23)
@@ -106,10 +156,31 @@ else:
                 "ocean_proximity": ocean_proximity
             }])
 
+            input_df["rooms_per_household"] = (
+            input_df["total_rooms"] /
+            input_df["households"]
+            )
+
+            input_df["bedrooms_per_room"] = (
+                input_df["total_bedrooms"] /
+                input_df["total_rooms"]
+            )
+
+            input_df["population_per_household"] = (
+                input_df["population"] /
+                input_df["households"]
+            )
+
             transformed_data = pipeline.transform(input_df)
             prediction = model.predict(transformed_data)
 
-            st.success(f"💰 Predicted House Price: ${prediction[0]:,.2f}")
+            st.success(f"💰 Predicted House Price: ${round(float(prediction[0]), 2)}")
 
         except Exception as e:
             st.error(f"Error: {e}")
+            
+st.divider()
+
+st.caption(
+    "Built with Scikit-learn, Streamlit and Random Forest Regression"
+)
