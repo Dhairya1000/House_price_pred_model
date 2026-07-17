@@ -19,6 +19,8 @@ PIPELINE_URL = "https://drive.google.com/uc?id=1zTSc6lUwU2dmuOlZZbrbftxSL12ZpqQy
 @st.cache_resource
 def load_model():
 
+    os.makedirs("models", exist_ok=True)
+    
     # Download model if not exists
     if not os.path.exists(MODEL_FILE):
         st.info("⬇️ Downloading model...")
