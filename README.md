@@ -1,84 +1,162 @@
-# House_price_pred_model
+# 🏠 House Price Prediction using Machine Learning
 
-![GitHub stars](https://img.shields.io/github/stars/Dhairya1000/House_price_pred_model?style=for-the-badge&logo=github) ![GitHub forks](https://img.shields.io/github/forks/Dhairya1000/House_price_pred_model?style=for-the-badge&logo=github) ![GitHub issues](https://img.shields.io/github/issues/Dhairya1000/House_price_pred_model?style=for-the-badge&logo=github) ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+A Machine Learning web application that predicts California house prices based on housing characteristics using a Random Forest Regressor. The project includes data preprocessing, feature engineering, model training, batch prediction, and an interactive Streamlit web interface.
 
-## 📑 Table of Contents
+---
 
-- [Description](#description)
-- [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Key Dependencies](#key-dependencies)
-- [Project Structure](#project-structure)
-- [Development Setup](#development-setup)
-- [Contributing](#contributing)
+## 🚀 Live Demo
 
+🔗 https://house-price-prediction-model-1-7fys.onrender.com
 
-## 📝 Description
+---
 
-This project is a sophisticated House Price Prediction Model developed using Python, designed to forecast real estate values with high accuracy. By leveraging machine learning algorithms and data analysis techniques, the model evaluates critical property attributes such as location, square footage, and amenities to provide insightful price estimates. This tool is ideal for data science enthusiasts and real estate professionals looking to harness the power of predictive analytics for informed market decision-making.
+## 📌 Features
+
+- Predict house prices from user input
+- Batch prediction using CSV upload
+- Automatic preprocessing using Scikit-learn Pipeline
+- Feature engineering
+- Interactive Streamlit interface
+- Download prediction results as CSV
+
+---
 
 ## 🛠️ Tech Stack
 
-- 🐍 Python
+- Python
+- Scikit-learn
+- Pandas
+- NumPy
+- Streamlit
+- Joblib
+- gdown
 
+---
 
-## ⚡ Quick Start
+## 📂 Dataset
 
-```bash
-# Clone the repository
-git clone https://github.com/Dhairya1000/House_price_pred_model.git
+California Housing Dataset
 
-# Create virtual environment
-python -m venv venv && source venv/bin/activate
+Features include:
 
-# Install dependencies
-pip install -r requirements.txt
-```
+- Longitude
+- Latitude
+- Housing Median Age
+- Total Rooms
+- Total Bedrooms
+- Population
+- Households
+- Median Income
+- Ocean Proximity
 
-## 📦 Key Dependencies
+---
 
-```
-streamlit: latest
-numpy: latest
-pandas: latest
-scikit-learn: 1.7.2
-joblib: latest
-gdown: latest
-```
+## ⚙️ Feature Engineering
 
+The following features are created before training:
+
+- Rooms per Household
+- Bedrooms per Room
+- Population per Household
+
+---
+
+## 🤖 Model
+
+**Random Forest Regressor**
+
+Preprocessing Pipeline:
+
+- Median Imputation
+- Standard Scaling
+- One-Hot Encoding
+
+---
+
+## 📊 Model Performance
+
+| Metric | Value |
+|--------|-------:|
+| RMSE | **47,625.98** |
+| MAE | **30,682.11** |
+| R² Score | **0.8268** |
+
+---
 
 ## 📁 Project Structure
 
 ```
-.
-├── housing.csv
-├── input.csv
-├── input_copy.csv.csv
-├── main.py
-├── main2.py
-├── output.csv
+House-Price-Prediction/
+│
+├── app.py
+├── train.py
+├── predict.py
 ├── requirements.txt
-└── streamlit.py
+├── housing.csv
+│
+├── models/
+│   ├── model.pkl
+│   └── pipeline.pkl
+│
+├── artifacts/
+│   └── metrics.json
+│
+├── data/
+│   ├── input.csv
+│   └── output.csv
+│
+└── README.md
 ```
 
-## 🛠️ Development Setup
+---
 
-### Python Setup
-1. Install Python (v3.8+ recommended)
-2. Create a virtual environment: `python -m venv venv`
-3. Activate the environment:
-   - Windows: `venv\Scripts\activate`
-   - Unix/MacOS: `source venv/bin/activate`
-4. Install dependencies: `pip install -r requirements.txt`
+## ▶️ Run Locally
 
+Clone the repository
 
-## 👥 Contributing
+```bash
+git clone <repository-url>
+```
 
-Contributions are welcome! Here's how you can help:
+Install dependencies
 
-1. **Fork** the repository
-2. **Clone** your fork: `git clone https://github.com/Dhairya1000/House_price_pred_model.git`
-3. **Create** a new branch: `git checkout -b feature/your-feature`
-4. **Commit** your changes: `git commit -am 'Add some feature'`
-5. **Push** to your branch: `git push origin feature/your-feature`
-6. **Open** a pull request
+```bash
+pip install -r requirements.txt
+```
+
+Run Streamlit
+
+```bash
+streamlit run app.py
+```
+
+---
+
+## 📦 Batch Prediction
+
+1. Upload a CSV file containing housing features.
+2. The model generates house price predictions.
+3. Download the output CSV with predicted prices.
+
+---
+
+## 📈 Future Improvements
+
+- XGBoost and LightGBM implementation
+- Hyperparameter tuning
+- SHAP Explainability
+- Docker deployment
+- FastAPI REST API
+- Model versioning
+
+---
+
+## 👨‍💻 Author
+
+**Dhairya Nagpal**
+
+🎓 B.Tech (Artificial Intelligence & Machine Learning)
+
+- LinkedIn: https://www.linkedin.com/in/dhairya-nagpal7
+- GitHub: https://github.com/Dhairya1000
+
